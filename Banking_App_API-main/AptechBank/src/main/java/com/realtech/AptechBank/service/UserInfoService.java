@@ -1,6 +1,8 @@
 package com.realtech.AptechBank.service;
 import com.realtech.AptechBank.dto.*;
+import com.realtech.AptechBank.entity.Transaction;
 import com.realtech.AptechBank.entity.UserInfo;
+import com.realtech.AptechBank.repository.TransactionRepo;
 import com.realtech.AptechBank.repository.UserInfoRepository;
 import com.realtech.AptechBank.utils.AccountUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,9 @@ import java.util.List;
 public class UserInfoService {
     @Autowired
     private UserInfoRepository userInfoRepository;
+
+    @Autowired
+    private TransactionService transactionService;
     @Autowired
     private EmailService emailService;
 
@@ -116,6 +121,15 @@ public class UserInfoService {
         UserInfo userToCredit = userInfoRepository.findByAccountNumber(request.getAccountNumber());
         userToCredit.setAccountBalance(userToCredit.getAccountBalance().add(request.getAmount()));
         userInfoRepository.save(userToCredit);
+
+        TransactionDto transactionDto = TransactionDto.builder()
+                .accountNumber(userToCredit.getAccountNumber())
+                .amount(request.getAmount())
+                .transactionType("CREDIT")
+                .build();
+
+        transactionService.saveTransaction(transactionDto);
+
         EmailDetails details = new EmailDetails();
         details.setReceipient(userToCredit.getEmail());
         details.setSubject("ACCOUNT CREDITED");
@@ -123,6 +137,7 @@ public class UserInfoService {
                 + "Account Balance:" + userToCredit.getAccountBalance() + "\n"
                 + "Account Name:" + userToCredit.getFirstName() + " " + userToCredit.getLastName());
         emailService.sendMail(details);
+
         bankResponse.setStatusCode(AccountUtil.ACCOUNT_CREDIT_CODE);
         bankResponse.setStatusMessage(AccountUtil.ACCOUNT_CREDIT_MESSAGE);
         accountInfo.setAccountNumber(request.getAccountNumber());
@@ -152,6 +167,15 @@ public class UserInfoService {
         else {
             userToDebit.setAccountBalance(userToDebit.getAccountBalance().subtract(request.getAmount()));
             userInfoRepository.save(userToDebit);
+
+            TransactionDto transactionDto = TransactionDto.builder()
+                    .accountNumber(userToDebit.getAccountNumber())
+                    .amount(request.getAmount())
+                    .transactionType("DEBIT")
+                    .build();
+
+            transactionService.saveTransaction(transactionDto);
+
             EmailDetails details = new EmailDetails();
             details.setReceipient(userToDebit.getEmail());
             details.setSubject("ACCOUNT DEBITED");
