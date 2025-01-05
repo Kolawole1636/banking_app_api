@@ -14,5 +14,5 @@ import java.math.BigDecimal;
 public class TransferRequest {
     private String senderAccountNumber;
     private String recipientAccountNumber;
-    private BigDecimal accountToSend;
+    private BigDecimal amountToSend;
 }

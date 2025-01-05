@@ -1,8 +1,6 @@
 package com.realtech.AptechBank.service;
 import com.realtech.AptechBank.dto.*;
-import com.realtech.AptechBank.entity.Transaction;
 import com.realtech.AptechBank.entity.UserInfo;
-import com.realtech.AptechBank.repository.TransactionRepo;
 import com.realtech.AptechBank.repository.UserInfoRepository;
 import com.realtech.AptechBank.utils.AccountUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,14 +44,14 @@ public class UserInfoService {
 
         UserInfo saveUser = userInfoRepository.save(userInfo);
 
-//        EmailDetails details = new EmailDetails();
-//        details.setReceipient(saveUser.getEmail());
-//        details.setSubject("ACCOUNT CREATION");
-//        details.setMessageBody("Congrats our new customer, your account has been successfully created"+"\n"
-//                + "Account Number:" + saveUser.getAccountNumber() + "\n"
-//                + "Account Balance:" + saveUser.getAccountBalance() + "\n"
-//                + "Account Name:" + saveUser.getFirstName() + " " + saveUser.getLastName());
-//        emailService.sendMail(details);
+        EmailDetails details = new EmailDetails();
+        details.setRecipient(saveUser.getEmail());
+        details.setSubject("ACCOUNT CREATION");
+        details.setMessageBody("Welcome To SMA Bank our new customer, your account has been successfully created"+"\n"
+                + "Account Number:" + saveUser.getAccountNumber() + "\n"
+                + "Account Balance:" + saveUser.getAccountBalance() + "\n"
+                + "Account Name:" + saveUser.getFirstName() + " " + saveUser.getLastName());
+        emailService.sendMail(details);
 
         bankResponse.setStatusCode(AccountUtil.ACCOUNT_CREATED_CODE);
         bankResponse.setStatusMessage(AccountUtil.ACCOUNT_CREATED_MESSAGE);
@@ -131,9 +129,10 @@ public class UserInfoService {
         transactionService.saveTransaction(transactionDto);
 
         EmailDetails details = new EmailDetails();
-        details.setReceipient(userToCredit.getEmail());
+        details.setRecipient(userToCredit.getEmail());
         details.setSubject("ACCOUNT CREDITED");
         details.setMessageBody("your account has been credited"+"\n"
+                + "Amount:" + "NGN"+ request.getAmount() +"\n"
                 + "Account Balance:" + userToCredit.getAccountBalance() + "\n"
                 + "Account Name:" + userToCredit.getFirstName() + " " + userToCredit.getLastName());
         emailService.sendMail(details);
@@ -177,9 +176,10 @@ public class UserInfoService {
             transactionService.saveTransaction(transactionDto);
 
             EmailDetails details = new EmailDetails();
-            details.setReceipient(userToDebit.getEmail());
+            details.setRecipient(userToDebit.getEmail());
             details.setSubject("ACCOUNT DEBITED");
             details.setMessageBody("your account has been debited"+"\n"
+                    + "Amount:" + "NGN"+ request.getAmount() +"\n"
                     + "Your current balance:" + userToDebit.getAccountBalance() + "\n"
                     + "Account Name:" + userToDebit.getFirstName() + " " + userToDebit.getLastName());
             emailService.sendMail(details);
@@ -205,25 +205,49 @@ public class UserInfoService {
             return bankResponse;
         }
         UserInfo userToDebit = userInfoRepository.findByAccountNumber(request.getSenderAccountNumber());
-        UserInfo userToCredit = userInfoRepository.findByAccountNumber(request.getSenderAccountNumber());
-        if(userToDebit.getAccountBalance().compareTo(request.getAccountToSend())<0){
+        UserInfo userToCredit = userInfoRepository.findByAccountNumber(request.getRecipientAccountNumber());
+        if(userToDebit.getAccountBalance().compareTo(request.getAmountToSend())<0){
             bankResponse.setStatusCode(AccountUtil.INSUFFICIENT_BALANCE_CODE);
             bankResponse.setStatusMessage(AccountUtil.INSUFFICIENT_BALANCE_MESSAGE);
             bankResponse.setAccountInfo(null);
             return bankResponse;
         }
         else {
-            userToDebit.setAccountBalance(userToDebit.getAccountBalance().subtract(request.getAccountToSend()));
-            userToCredit.setAccountBalance(userToDebit.getAccountBalance().add(request.getAccountToSend()));
+            userToDebit.setAccountBalance(userToDebit.getAccountBalance().subtract(request.getAmountToSend()));
+            userToCredit.setAccountBalance(userToCredit.getAccountBalance().add(request.getAmountToSend()));
             userInfoRepository.save(userToDebit);
             userInfoRepository.save(userToCredit);
+
+            TransactionDto transactionDto = TransactionDto.builder()
+                    .accountNumber(userToDebit.getAccountNumber())
+                    .amount(request.getAmountToSend())
+                    .transactionType("TRANSFER")
+                    .build();
+
+            transactionService.saveTransaction(transactionDto);
+
             EmailDetails details = new EmailDetails();
-            details.setReceipient(userToDebit.getEmail());
+            details.setRecipient(userToDebit.getEmail());
             details.setSubject("ACCOUNT DEBITED");
             details.setMessageBody("your account has been debited"+"\n"
+                    + "Amount Transferred:" + "NGN"+ request.getAmountToSend() +"\n"
                     + "Your current balance:" + userToDebit.getAccountBalance() + "\n"
-                    + "Account Name:" + userToDebit.getFirstName() + " " + userToDebit.getLastName());
+                    + "Account Name:" + userToDebit.getFirstName() + " " + userToDebit.getLastName()+"\n"
+                    + "Recipient Name:" + userToCredit.getFirstName() + " " + userToCredit.getLastName());
+
             emailService.sendMail(details);
+
+            EmailDetails creditDetails = new EmailDetails();
+            creditDetails.setRecipient(userToCredit.getEmail());
+            creditDetails.setSubject("ACCOUNT CREDITED");
+            creditDetails.setMessageBody("your account has been credited"+"\n"
+                    + "Amount Transferred to you:" + "NGN"+ request.getAmountToSend() +"\n"
+                    + "Your current balance:" + userToCredit.getAccountBalance() + "\n"
+                    + "Account Name:" + userToCredit.getFirstName() + " " + userToCredit.getLastName()+"\n"
+                    + "Sender Name:" + userToDebit.getFirstName() + " " + userToDebit.getLastName());
+
+            emailService.sendMail(creditDetails);
+
             bankResponse.setStatusCode(AccountUtil.ACCOUNT_DEBIT_CODE);
             bankResponse.setStatusMessage(AccountUtil.ACCOUNT_DEBIT_MESSAGE);
             accountInfo.setAccountNumber(request.getSenderAccountNumber());
@@ -264,13 +288,21 @@ public class UserInfoService {
             userInfoRepository.save(userToDebit);
             userInfoRepository.save(firstUserToCredit);
             userInfoRepository.save(secondUserToCredit);
+
+            TransactionDto transactionDto = TransactionDto.builder()
+                    .accountNumber(userToDebit.getAccountNumber())
+                    .amount(totalAmountToSend)
+                    .transactionType("DOUBLE TRANSFER")
+                    .build();
+
             EmailDetails details = new EmailDetails();
-            details.setReceipient(userToDebit.getEmail());
+            details.setRecipient(userToDebit.getEmail());
             details.setSubject("ACCOUNT DEBITED");
             details.setMessageBody("your account has been debited"+"\n"
                     + "Your current balance:" + userToDebit.getAccountBalance() + "\n"
                     + "Account Name:" + userToDebit.getFirstName() + " " + userToDebit.getLastName());
             emailService.sendMail(details);
+
             bankResponse.setStatusCode(AccountUtil.ACCOUNT_DEBIT_CODE);
             bankResponse.setStatusMessage(AccountUtil.ACCOUNT_DEBIT_MESSAGE);
             accountInfo.setAccountNumber(request.getSenderAccountNumber());
@@ -279,5 +311,12 @@ public class UserInfoService {
             bankResponse.setAccountInfo(accountInfo);
             return bankResponse;
         }
+    }
+
+    public String removeUser(int id) {
+
+        userInfoRepository.deleteById(id);
+
+        return "User has been removed successfully";
     }
 }

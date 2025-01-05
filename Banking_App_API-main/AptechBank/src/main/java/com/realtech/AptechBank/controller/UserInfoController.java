@@ -24,15 +24,21 @@ public class UserInfoController {
     public String getAccountName(@RequestBody EnquiryRequest request){
         return userInfoService.getAccountName(request);
     }
+
+    @DeleteMapping("admin/removeuser/{id}")
+    public String  removeUser(@PathVariable int id){
+        return userInfoService.removeUser(id);
+    }
+
     @GetMapping("user/getBalance")
     public BankResponse getBalance(@RequestBody EnquiryRequest request){
         return userInfoService.getBalance(request);
     }
-    @PostMapping("user/creditAccount")
+    @PostMapping("user/creditaccount")
     public BankResponse creditAccount(@RequestBody CreditDebitRequest request){
         return userInfoService.creditAccount(request);
     }
-    @PostMapping("user/debitAccount")
+    @PostMapping("user/debitaccount")
     public BankResponse debitAccount(@RequestBody CreditDebitRequest request){
         return userInfoService.debitAccount(request);
     }
