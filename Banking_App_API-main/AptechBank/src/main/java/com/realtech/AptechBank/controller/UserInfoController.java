@@ -3,6 +3,8 @@ package com.realtech.AptechBank.controller;
 import com.realtech.AptechBank.dto.*;
 import com.realtech.AptechBank.service.UserInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,7 +36,8 @@ public class UserInfoController {
         return userInfoService.removeUser(id);
     }
 
-    @GetMapping("user/getBalance")
+    //@PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("getBalance")
     public BankResponse getBalance(@RequestBody EnquiryRequest request){
         return userInfoService.getBalance(request);
     }

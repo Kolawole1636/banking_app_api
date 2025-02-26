@@ -67,8 +67,8 @@ public class SecurityConfiguration {
                 .csrf(custom-> custom.disable())
                 .authorizeHttpRequests(registry->registry
                     .requestMatchers("/register","/login","/user").permitAll()
-                    .requestMatchers("/admin/**").hasRole("ADMIN")
-                    .requestMatchers("/user/**").hasRole("USER")
+                    //.requestMatchers("/admin/**").hasRole("ADMIN")
+                   // .requestMatchers("/user/**").hasRole("USER")
                     .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .sessionManagement(session->
@@ -76,7 +76,6 @@ public class SecurityConfiguration {
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
-
 
     }
 
