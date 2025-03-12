@@ -32,15 +32,16 @@ public class UserDataService {
 
     }
 
-    public void verify(UserData userData) {
+    public String verify(UserData userData) {
 
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(userData.getName(), userData.getPassword()));
 
         if(authentication.isAuthenticated()){
 
-            jwtService.generateToken(userData.getName());
+            return jwtService.generateToken(userData.getName());
         }
 
+        return "fail";
     }
 }

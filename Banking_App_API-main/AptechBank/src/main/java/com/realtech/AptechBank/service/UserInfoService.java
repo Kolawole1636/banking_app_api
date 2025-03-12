@@ -193,6 +193,7 @@ public class UserInfoService {
         }
     }
 
+
     public BankResponse transfer(TransferRequest request){
         BankResponse bankResponse = new BankResponse();
         AccountInfo accountInfo = new AccountInfo();
@@ -221,10 +222,18 @@ public class UserInfoService {
             TransactionDto transactionDto = TransactionDto.builder()
                     .accountNumber(userToDebit.getAccountNumber())
                     .amount(request.getAmountToSend())
-                    .transactionType("TRANSFER")
+                    .transactionType("TRANSFER_DEB")
+                    .build();
+
+
+            TransactionDto transactionDto1 = TransactionDto.builder()
+                    .accountNumber(userToCredit.getAccountNumber())
+                    .amount(request.getAmountToSend())
+                    .transactionType("TRANSFER_CRED")
                     .build();
 
             transactionService.saveTransaction(transactionDto);
+            transactionService.saveTransaction(transactionDto1);
 
             EmailDetails details = new EmailDetails();
             details.setRecipient(userToDebit.getEmail());
@@ -257,6 +266,7 @@ public class UserInfoService {
             return bankResponse;
         }
     }
+
 
     public BankResponse multipleTransfer(MultipleTransferRequest request){
         BankResponse bankResponse = new BankResponse();

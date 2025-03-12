@@ -9,12 +9,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:3000")  // Allow frontend URL
 @RestController
 @RequestMapping("bankingapp/")
 public class UserInfoController {
     @Autowired
     private UserInfoService userInfoService;
+
+
 
     @PostMapping("/createaccount")
     public BankResponse createAccount(@RequestBody UserRequest userRequest){
@@ -52,7 +54,7 @@ public class UserInfoController {
         return userInfoService.debitAccount(request);
     }
 
-    @PostMapping("user/transfer")
+    @PostMapping("/transfer")
     public BankResponse transfer(@RequestBody TransferRequest request){
         return userInfoService.transfer(request);
     }

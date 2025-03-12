@@ -32,11 +32,11 @@ public class JwtService {
 
     }
 
-    public void generateToken(String name) {
+    public String generateToken(String name) {
 
         Map<String, Object> claims = new HashMap<>();
 
-        Jwts.builder()
+        return Jwts.builder()
                 .claims()
                 .add(claims)
                 .subject(name)
